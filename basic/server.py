@@ -1,12 +1,12 @@
 import socket
+import threading
 
 # create a socket object
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # get local machine name
 host = socket.gethostname()
-print(host)
-print(socket.gethostbyname(host))
+print(f'Server host: {host}')
 
 # set port number
 port = 9991
@@ -15,30 +15,44 @@ port = 9991
 server_socket.bind((host, port))
 
 # set the number of client connections that can be queued
-server_socket.listen(1)
-
+server_socket.listen(5)
 print('Waiting for a client to connect...')
 
-# accept client connection
-client_socket, address = server_socket.accept()
+# list to store all client sockets
+client_sockets = []
 
-print(f'Got a connection from {address}')
+# function to handle incoming client connections
+def handle_client(client_socket, address):
+    print(f'Got a connection from {address}')
+    client_sockets.append(client_socket)
 
-while True:
-    # receive message from client
-    message = client_socket.recv(1024).decode()
+    while True:
+        # receive message from client
+        message = client_socket.recv(1024).decode()
 
-    # check if message is empty or client disconnected
-    if not message or message == 'exit':
-        print('Client disconnected')
-        break
+        # check if message is empty or client disconnected
+        if not message or message == 'exit':
+            print(f'{address} disconnected')
+            client_sockets.remove(client_socket)
+            client_socket.close()
+            break
 
-    print(f'Received message from client: {message}')
+        print(f'Received message from {address}: {message}')
 
-    # send message to client
-    response = input('Enter a response: ')
-    client_socket.send(response.encode())
+        # send message to all connected clients except the sender
+        for socket in client_sockets:
+            if socket != client_socket:
+                socket.send(f'{address}: {message}'.encode())
 
-# close client and server sockets
-client_socket.close()
-server_socket.close()
+# function to listen for incoming client connections
+def listen_for_clients():
+    while True:
+        # accept client connection
+        client_socket, address = server_socket.accept()
+        # create a new thread to handle the client connection
+        client_thread = threading.Thread(target=handle_client, args=(client_socket, address))
+        client_thread.start()
+
+# start listening for incoming client connections
+client_listener = threading.Thread(target=listen_for_clients)
+client_listener.start()
