@@ -91,75 +91,84 @@ for i in sorted(lst_rt):
     if i == "127.0.0.6":
         print(f"\nTotal number of updates value (n): {flag}")
 
+try:
+    # Read the port number
+    port = int(args.port)
+    ip_address = '127.0.0.1'
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind((ip_address, port))
+    print(f"Router Listening on port {port}")
+    update=0 # Initialize update number
+    subprocess.Popen(['python', r'C:\Users\Saarthak Mudigere\Desktop\(1002119262),(1002029323)_(SaarthakMudigereGirish),(ChinmayRamdasHegde)\client.py'])
+    payload_size = 0  # Initialize payload size
 
-# Read the port number
-port = int(args.port)
-ip_address = '127.0.0.1'
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind((ip_address, port))
-print(f"Router Listening on port {port}")
-update=0 # Initialize update number
-subprocess.Popen(['python', r'C:\Users\Saarthak Mudigere\Desktop\(1002119262),(1002029323)_(SaarthakMudigereGirish),(ChinmayRamdasHegde)\client.py'])
-payload_size = 0  # Initialize payload size
+    while True:
+        for i in lst_rt:
+                #print(node,'---->node')
+                # Listen for updates
+            count=0
+            flag=0
+            while count<1:
+                count+=1
+                data, addr = sock.recvfrom(1024)
+                recv_message = data.decode('utf-8')
+                # Get the size of the payload in bytes
+                payload_size = len(data)
 
-while True:
-    for i in lst_rt:
-            #print(node,'---->node')
-            # Listen for updates
-        count=0
-        flag=0
-        while count<1:
-            count+=1
-            data, addr = sock.recvfrom(1024)
-            recv_message = data.decode('utf-8')
-            # Get the size of the payload in bytes
-            payload_size = len(data)
-            # Decode the payload to a string
-            payload_str = data.decode('utf-8')
-            # Initialize an empty dictionary
-            message = []
+                # Initialize an empty dictionary
+                message = []
 
-            # Parse the lines into key-value pairs  
-            value = recv_message.split(',')
-            message.append(value)
-                
-            pattern = r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'
-            pattern2 = r'\d+'
-            matches = re.findall(pattern, recv_message)
-            matches2 = re.findall(pattern2, recv_message)
-
-            # Find the source, destination, and cost using regex
-            source = matches[0]
-            destination = matches[1]
-            cost = matches2[-1]
-            prev_cost = graph[source][destination]
-                
-            # Change the link cost
-            graph[source][destination] = int(cost)
-            graph[destination][source] = int(cost)
-
-            update+=1
-            print(f"\nSource: {source}")
-            print(f"Current Cost: {graph[source][destination]}")
-            print(f"Previous Cost: {prev_cost}")
-
-            name = {"127.0.0.1":"A", "127.0.0.2":"B", "127.0.0.3":"C", "127.0.0.4":"D", "127.0.0.5":"E", "127.0.0.6":"F"}
-            print(f"\n---------------AFTER UPDATE {update}---------------")
-            # Use the Bellman-Ford algorithm to find the shortest paths
-            for i in sorted(lst_rt):
-                print("\n-----------------", i,"-----------------")
-                shortest_paths = bellman_ford(graph, i)
-                # Print the shortest paths
-                for node, distance in shortest_paths.items():
-                    print(f'Shortest path from {i} to {node}: {distance}')
-                if i == "127.0.0.6":
-                    print(f"\nMessage from Router(Name: {name[source]}, IP address: {source}, Port No.: {port})")
-                    print("Your UTA-ID number(s): 1002119262, 1002029323")     
-                    # Get the current local time
-                    current_time = datetime.now(timezone.utc)
-                    print(f"The date and timestamp in UTC: {current_time}")
-                    print(f"Total number of updates value (n): {flag}")
-                    print(f"Payload size exclusively for this last broadcast: {payload_size}")
+                # Parse the lines into key-value pairs  
+                value = recv_message.split(',')
+                message.append(value)
                     
-        if update==3:                
-            exit(0)
+                pattern = r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'
+                pattern2 = r'\d+'
+                matches = re.findall(pattern, recv_message)
+                matches2 = re.findall(pattern2, recv_message)
+
+                # Find the source, destination, and cost using regex
+                source = matches[0]
+                destination = matches[1]
+                cost = matches2[-1]
+                prev_cost = graph[source][destination]
+                    
+                # Change the link cost
+                graph[source][destination] = int(cost)
+                graph[destination][source] = int(cost)
+
+                update+=1
+                print(f"\nSource: {source}")
+                print(f"Current Cost: {graph[source][destination]}")
+                print(f"Previous Cost: {prev_cost}")
+
+                name = {"127.0.0.1":"A", "127.0.0.2":"B", "127.0.0.3":"C", "127.0.0.4":"D", "127.0.0.5":"E", "127.0.0.6":"F"}
+                print(f"\n---------------AFTER UPDATE {update}---------------")
+                # Use the Bellman-Ford algorithm to find the shortest paths
+                for i in sorted(lst_rt):
+                    print("\n-----------------", i,"-----------------")
+                    shortest_paths = bellman_ford(graph, i)
+                    # Print the shortest paths
+                    for node, distance in shortest_paths.items():
+                        print(f'Shortest path from {i} to {node}: {distance}')
+                    if i == "127.0.0.6":
+                        print(f"\nMessage from Router(Name: {name[source]}, IP address: {source}, Port No.: {port})")
+                        print("Your UTA-ID number(s): 1002119262, 1002029323")     
+                        # Get the current local time
+                        current_time = datetime.now(timezone.utc)
+                        print(f"The date and timestamp in UTC: {current_time}")
+                        print(f"Total number of updates value (n): {flag}")
+                        print(f"Payload size exclusively for this last broadcast: {payload_size}")
+                        
+            if update==3:                
+                exit(0)
+except socket.error as e:
+    print('Socket error: ' + str(e))
+
+finally:
+    # close the socket
+    try:
+        sock.close()
+        print('Socket closed')
+    except socket.error as e:
+        print('Failed to close socket: ' + str(e))
